@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+'''A module for using the Redis NoSQL data storage.
+'''
 import uuid
 import redis
 from functools import wraps
