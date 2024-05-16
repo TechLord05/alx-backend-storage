@@ -1,10 +1,7 @@
-#!/usr/bin/env python3
-'''A module for using the Redis NoSQL data storage.
-'''
 import uuid
 import redis
 from functools import wraps
-from typing import Any, Callable, Union, Optional
+from typing import Any, Union, Callable, Optional
 
 
 def count_calls(method: Callable) -> Callable:
@@ -42,19 +39,19 @@ def call_history(method: Callable) -> Callable:
         '''Returns the method's output after storing its inputs and output.
         '''
         # Create keys for input and output storage
-        in_key = '{}:inputs'.format(method.__qualname__)
-        out_key = '{}:outputs'.format(method.__qualname__)
+        key_in = '{}:inputs'.format(method.__qualname__)
+        key_out = '{}:outputs'.format(method.__qualname__)
 
-        # Store input in Redis
+        # Store input in redis
         if isinstance(self._redis, redis.Redis):
-            self._redis.rpush(in_key, str(args))
+            self._redis.rpush(key_in, str(args))
 
-        # Call the method and store its output
+        # Call the method ad store its output
         output = method(self, *args, **kwargs)
 
         # Store output in Redis
         if isinstance(self._redis, redis.Redis):
-            self._redis.rpush(out_key, output)
+            self._redis.rpush(key_out, output)
 
         return output
     return invoker
@@ -74,8 +71,9 @@ class Cache:
     """
 
     def __init__(self):
-        """
-        Initialize a Redis client instance and clear the database.
+        """A method to store an instance of the Redis client as a private
+        variable named _redis (using redis.Redis()) and flush the
+        instance using flushdb.
         """
         self._redis = redis.Redis()
         self._redis.flushdb()
@@ -83,14 +81,8 @@ class Cache:
     @count_calls
     @call_history
     def store(self, data: Union[str, bytes, int, float]) -> str:
-        """
-        Store the data in Redis with a UUID key and return the key.
-
-        Args:
-            data: The data to be stored. Can be a string, bytes, int, or float.
-
-        Returns:
-            str: The UUID key used to store the data.
+        """A method that stores the input data in Redis
+        using the random key and return the key.
         """
         key = str(uuid.uuid4())
         self._redis.set(key, data)
@@ -118,23 +110,22 @@ class Cache:
         return fn(data) if fn is not None else data
 
     def get_str(self, key: str) -> Optional[str]:
-        """
-        Retrieves a string value from a Redis data storage.
+        """Retrieve a string value from Redis based on the given key.
 
-        Args:
-            key: The key of the data to be retrieved.
+            Args:
+                key: The key to retrieve the string value from Redis.
 
-        Returns:
-            The retrieved string value.
+            Returns:
+                The retrieved string value.
         """
         # Retrieve the data using the get method
         data = self.get(key)
 
-        # Check if data is None
+        # check if data is None
         if data is None:
             return None
 
-        # Convert data to string and return
+        # Convert data to sring and return
         return str(data)
 
 
@@ -148,7 +139,6 @@ def get_int(self, key: str) -> Optional[int]:
     Returns:
         The retrieved integer value.
     """
-
     # Retrieve the data using the get method
     data = self.get(key)
 
@@ -156,7 +146,7 @@ def get_int(self, key: str) -> Optional[int]:
     if data is None:
         return None
 
-    # Convert data to an integer and return
+    # Convert to integer and return
     return int(data)
 
 
